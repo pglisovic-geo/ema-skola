@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-180.png">
+<meta name="apple-mobile-web-app-title" content="Le nom">
+<meta name="theme-color" content="#fff8ef">
+<title>Test : le genre et le nombre du nom</title>
+<style>
+  :root{
+    --bg:#fff8ef; --card:#ffffff; --ink:#2b2b3a; --soft:#6b6b80;
+    --a:#3b82c4; --b:#e0742b; --c:#8a4fc4;
+    --ok:#2e9e5b; --okbg:#e6f6ec; --no:#d0453a; --nobg:#fdecea;
+    --line:#eadfce; --m:#2f6fb5; --f:#c2417a;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:ui-rounded,"SF Pro Rounded",-apple-system,"Segoe UI",system-ui,sans-serif;
+    font-size:20px;line-height:1.4}
+  main{max-width:720px;margin:0 auto;padding:18px 16px 60px}
+  h1{font-size:1.6rem;margin:.2em 0 .1em}
+  h2{font-size:1.25rem;margin:.2em 0}
+  .sub{color:var(--soft);font-size:.9rem}
+  .card{background:var(--card);border:2px solid var(--line);border-radius:20px;padding:20px;margin:16px 0;box-shadow:0 3px 0 var(--line)}
+  .tag{display:inline-block;font-size:.8rem;font-weight:700;color:#fff;border-radius:999px;padding:3px 12px}
+  .tA{background:var(--a)} .tB{background:var(--b)} .tC{background:var(--c)}
+  .bar{height:12px;background:#f0e6d8;border-radius:999px;overflow:hidden;margin:8px 0 4px}
+  .bar>i{display:block;height:100%;background:linear-gradient(90deg,var(--a),var(--b),var(--c));width:0;transition:width .3s}
+  .q{font-size:1.3rem;font-weight:700;margin:.3em 0 .8em}
+  .hint{color:var(--soft);font-size:.95rem;margin-bottom:.5em}
+  .opts{display:grid;gap:12px}
+  .opts.two{grid-template-columns:1fr 1fr}
+  button{font:inherit;cursor:pointer;border:none}
+  .opt{background:#fff;border:3px solid var(--line);border-radius:16px;padding:16px 14px;font-size:1.2rem;font-weight:600;color:var(--ink);text-align:center;min-height:62px}
+  .opt:active{transform:scale(.98)}
+  .opt.good{border-color:var(--ok);background:var(--okbg)}
+  .opt.bad{border-color:var(--no);background:var(--nobg)}
+  .opt[disabled]{cursor:default}
+  .opt.dim{opacity:.5}
+  input.typ{font:inherit;font-size:1.3rem;width:100%;padding:14px;border:3px solid var(--line);border-radius:16px;outline:none}
+  input.typ:focus{border-color:var(--a)}
+  input.typ.good{border-color:var(--ok);background:var(--okbg)}
+  input.typ.bad{border-color:var(--no);background:var(--nobg)}
+  .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  .big{background:var(--a);color:#fff;border-radius:16px;padding:14px 24px;font-size:1.15rem;font-weight:700;box-shadow:0 3px 0 #2a5f91}
+  .big.alt{background:#fff;color:var(--ink);border:3px solid var(--line);box-shadow:none}
+  .big.orange{background:var(--b);box-shadow:0 3px 0 #a9541c}
+  .big.violet{background:var(--c);box-shadow:0 3px 0 #66398f}
+  .fb{margin-top:16px;border-radius:16px;padding:14px 16px;font-size:1.05rem}
+  .fb.ok{background:var(--okbg);border:2px solid var(--ok)}
+  .fb.no{background:var(--nobg);border:2px solid var(--no)}
+  .fb b{display:block;font-size:1.15rem;margin-bottom:4px}
+  .next{margin-top:16px;text-align:right}
+  .m{color:var(--m);font-weight:700} .f{color:var(--f);font-weight:700}
+  .score{font-size:3rem;font-weight:800;text-align:center;margin:.2em 0}
+  .stars{font-size:2.2rem;text-align:center;letter-spacing:6px}
+  table{width:100%;border-collapse:collapse;font-size:1rem}
+  td,th{padding:8px 6px;border-bottom:1px solid var(--line);text-align:left}
+  .err{font-size:.95rem;padding:10px 0;border-bottom:1px dashed var(--line)}
+  .err .ans{color:var(--ok);font-weight:700}
+  .err .you{color:var(--no);text-decoration:line-through}
+  .rules h3{margin:.8em 0 .2em;font-size:1.05rem}
+  .rules p{margin:.2em 0;font-size:.95rem}
+  .hidden{display:none}
+  .ext{font-size:.75rem;color:var(--soft);font-style:italic}
+</style>
+</head>
+<body>
+<main id="app"></main>
+
+<script>
+// ---------- Contenu : seulement les pages du cahier (Cahier A, p. 79 à 82) ----------
+// type: "choice" (boutons) | "type" (écrire). pts par question selon la partie.
+const PARTS = [
+  { id:"A", name:"Partie A", title:"Je connais", pts:2, cls:"tA", color:"var(--a)", qs:[
+    {p:"Un ou une ?", w:"___ marteau", o:["un","une"], a:"un", e:"marteau est masculin (m.) : un marteau."},
+    {p:"Un ou une ?", w:"___ pelle", o:["un","une"], a:"une", e:"pelle est féminin (f.) : une pelle."},
+    {p:"Un ou une ?", w:"___ allumette", o:["un","une"], a:"une", e:"allumette est féminin (f.) : une allumette."},
+    {p:"Un ou une ?", w:"___ étoile", o:["un","une"], a:"une", e:"étoile est féminin (f.) : une étoile."},
+    {p:"Un ou une ?", w:"___ avion", o:["un","une"], a:"un", e:"avion est masculin (m.) : un avion."},
+    {p:"Un ou une ?", w:"___ escalier", o:["un","une"], a:"un", e:"escalier est masculin (m.) : un escalier."},
+    {p:"Singulier ou pluriel ?", w:"une créature", o:["singulier","pluriel"], a:"singulier", e:"une créature : il y en a une seule. C'est le singulier (s.)."},
+    {p:"Singulier ou pluriel ?", w:"des créatures", o:["singulier","pluriel"], a:"pluriel", e:"des créatures : il y en a plusieurs. C'est le pluriel (pl.)."},
+    {p:"Singulier ou pluriel ?", w:"des portes", o:["singulier","pluriel"], a:"pluriel", e:"des portes : il y en a plusieurs. C'est le pluriel (pl.)."},
+    {p:"Singulier ou pluriel ?", w:"une porte", o:["singulier","pluriel"], a:"singulier", e:"une porte : il y en a une seule. C'est le singulier (s.)."},
+    {p:"Que veut dire l'abréviation <b>f.</b> ?", o:["féminin","pluriel","masculin"], a:"féminin", e:"f. = féminin, m. = masculin."},
+    {p:"Que veut dire l'abréviation <b>pl.</b> ?", o:["pluriel","singulier","féminin"], a:"pluriel", e:"pl. = pluriel, s. = singulier."},
+    {p:"Le <b>genre</b> du nom, c'est…", o:["masculin ou féminin","singulier ou pluriel","un ou des"], a:"masculin ou féminin", e:"Le nom a un genre : il est féminin (f.) ou masculin (m.)."},
+    {p:"Le <b>nombre</b> du nom, c'est…", o:["singulier ou pluriel","masculin ou féminin","un ou une"], a:"singulier ou pluriel", e:"Le nom varie en nombre : il est singulier (s.) ou pluriel (pl.)."},
+    {p:"Pour former le féminin d'un nom, on ajoute souvent… à la fin.", o:["un -e","un -s","un -x"], a:"un -e", e:"On ajoute un -e à la fin : un voisin → une voisine."}
+  ]},
+  { id:"B", name:"Partie B", title:"J'applique les règles", pts:2, cls:"tB", color:"var(--b)", qs:[
+    {p:"Quel nom désigne un animal et peut changer de genre ?", o:["un chien","un marteau","un escalier"], a:"un chien", e:"Le nom qui désigne une personne ou un animal varie en genre : un chien → une chienne."},
+    {p:"Choisis le bon féminin.", w:"un ours → une ___", o:["ourse","oursse","ourselle"], a:"ourse", e:"On ajoute un -e : un ours → une ourse."},
+    {p:"Choisis le bon féminin.", w:"un voisin → une ___", o:["voisine","voisinne","voisineuse"], a:"voisine", e:"On ajoute un -e : un voisin → une voisine."},
+    {p:"Choisis le bon féminin.", w:"un Canadien → une ___", o:["Canadienne","Canadiene","Canadieuse"], a:"Canadienne", e:"-en : on double le n et on ajoute -e → Canadienne."},
+    {p:"Choisis le bon féminin.", w:"un lion → une ___", o:["lionne","lione","lionse"], a:"lionne", e:"-on : on double le n et on ajoute -e → lionne."},
+    {p:"Choisis le bon féminin.", w:"un gardien → une ___", o:["gardienne","gardiene","gardieuse"], a:"gardienne", e:"-en : on double le n et on ajoute -e → gardienne."},
+    {p:"Choisis le bon féminin.", w:"un agneau → une ___", o:["agnelle","agneaue","agneuse"], a:"agnelle", e:"-eau → -elle : un agneau → une agnelle."},
+    {p:"Choisis le bon féminin.", w:"un chameau → une ___", o:["chamelle","chameaue","chameuse"], a:"chamelle", e:"-eau → -elle : un chameau → une chamelle."},
+    {p:"Choisis le bon féminin.", w:"un berger → une ___", o:["bergère","bergerre","bergeuse"], a:"bergère", e:"-er → -ère : un berger → une bergère. N'oublie pas l'accent è !"},
+    {p:"Choisis le bon féminin.", w:"un boulanger → une ___", o:["boulangère","boulangerre","boulangeuse"], a:"boulangère", e:"-er → -ère : un boulanger → une boulangère."},
+    {p:"Choisis le bon féminin.", w:"un pêcheur → une ___", o:["pêcheuse","pêcheure","pêchelle"], a:"pêcheuse", e:"-eur → -euse : un pêcheur → une pêcheuse."},
+    {p:"Choisis le bon féminin.", w:"un patineur → une ___", o:["patineuse","patineure","patinère"], a:"patineuse", e:"-eur → -euse : un patineur → une patineuse."},
+    {p:"Choisis le bon féminin.", w:"un aviateur → une ___", o:["aviatrice","aviateure","aviatelle"], a:"aviatrice", e:"-teur → -trice : un aviateur → une aviatrice."},
+    {p:"Choisis le bon féminin.", w:"un dompteur → une ___", o:["dompteuse","dompteure","domptelle"], a:"dompteuse", e:"-teur → -teuse : un dompteur → une dompteuse."},
+    {p:"Choisis le bon féminin.", w:"un sportif → une ___", o:["sportive","sportife","sportiffe"], a:"sportive", e:"-f → -ve : un sportif → une sportive."},
+    {p:"Choisis le bon féminin.", w:"un loup → une ___", o:["louve","loupe","louse"], a:"louve", e:"-p → -ve : un loup → une louve."},
+    {p:"Choisis le bon féminin.", w:"un jaloux → une ___", o:["jalouse","jalouxe","jalouve"], a:"jalouse", e:"-x → -se : un jaloux → une jalouse."},
+    {p:"Choisis le bon féminin.", w:"un peureux → une ___", o:["peureuse","peureuxe","peureuve"], a:"peureuse", e:"-x → -se : un peureux → une peureuse."},
+    {p:"un danseur → une danseuse. Quelle règle ?", o:["-eur → -euse","-er → -ère","-eau → -elle"], a:"-eur → -euse", e:"danseur se termine par -eur, donc -eur → -euse."},
+    {p:"un fermier se termine par -er. Son féminin est…", o:["une fermière","une fermieuse","une fermielle"], a:"une fermière", e:"-er → -ère : un fermier → une fermière."}
+  ]},
+  { id:"C", name:"Partie C", title:"Défi", pts:3, cls:"tC", color:"var(--c)", qs:[
+    {p:"Vrai ou faux ?", w:"« Tous les noms ont les deux genres. »", o:["vrai","faux"], a:"faux", e:"Faux. Seuls certains noms ont les deux genres. Ce sont habituellement des noms de professions."},
+    {p:"Quel nom s'écrit pareil au masculin et au féminin ?", o:["archéologue","chercheur","loup"], a:"archéologue", e:"un archéologue → une archéologue : même mot, seul le petit mot change."},
+    {p:"Attention, exception !", w:"un rat → une ___", o:["rate","ratte","ratrice"], a:"rate", e:"Exception : on ne double pas le t. un rat → une rate."},
+    {p:"Attention, exception !", w:"un artisan → une ___", o:["artisane","artisanne","artisaneuse"], a:"artisane", e:"Exception : on ne double pas le n. un artisan → une artisane."},
+    {p:"Attention, exception !", w:"un idiot → une ___", o:["idiote","idiotte","idioteuse"], a:"idiote", e:"Exception : on ne double pas le t. un idiot → une idiote."},
+    {t:"type", p:"Écris le féminin. (C'est une exception !)", w:"un vieux → une ___", a:["vieille"], e:"Exception : un vieux → une vieille."},
+    {t:"type", p:"Écris le féminin. (C'est une exception !)", w:"un roux → une ___", a:["rousse"], e:"Exception : un roux → une rousse (deux s)."},
+    {t:"type", p:"Écris le féminin.", w:"un musicien → une ___", a:["musicienne"], e:"-en : on double le n et on ajoute -e → musicienne."},
+    {p:"Lequel est <b>mal</b> écrit ?", o:["une Canadiene","une louve","une bergère"], a:"une Canadiene", e:"Il faut doubler le n : une Canadienne."},
+    {p:"Vrai ou faux ?", w:"« Pour former le féminin, on ajoute toujours seulement un -e. »", o:["vrai","faux"], a:"faux", e:"Faux. Parfois la fin change : un agneau → une agnelle, un loup → une louve."}
+  ]}
+];
+
+const RULES = `
+<h3>Le genre du nom</h3>
+<p>Le nom a un genre : <span class="f">féminin (f.)</span> ou <span class="m">masculin (m.)</span>. <span class="m">un</span> marteau, <span class="f">une</span> pelle.</p>
+<p>Seuls certains noms ont les deux genres, souvent des professions : un archéologue → une archéologue.</p>
+<p>Le nom d'une personne ou d'un animal varie en genre : un chercheur → une chercheuse, un chien → une chienne.</p>
+<h3>Le nombre du nom</h3>
+<p>Singulier (s.) ou pluriel (pl.) : une porte → des portes.</p>
+<h3>La formation du féminin</h3>
+<p>On ajoute <b>-e</b> : un ours → une ourse, un voisin → une voisine.</p>
+<p>-an, -en, -on, -et, -at, -ot, -el : on <b>double</b> la consonne + -e : un Canadien → une Canadienne.<br>Exceptions : artisane, rate, idiote.</p>
+<p>-eau → -elle (agnelle) · -er → -ère (bergère) · -eur → -euse (pêcheuse) · -teur → -trice ou -teuse (aviatrice, dompteuse)</p>
+<p>-f → -ve (sportive) · -p → -ve (louve) · -x → -se (jalouse)<br>Exceptions : vieux → vieille, roux → rousse.</p>`;
+
+// ---------- État ----------
+const KEY = "test-genre-nombre-v1";
+let S = load() || fresh();
+
+function fresh(){ return {screen:"home", part:0, idx:0, answers:{}, order:null, retry:null}; }
+function save(){ try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){} }
+function load(){ try{ const v = localStorage.getItem(KEY); return v ? JSON.parse(v) : null; }catch(e){ return null; } }
+
+function shuffle(a){ a = a.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+function qid(p,i){ return PARTS[p].id + i; }
+function norm(s){ return (s||"").toLowerCase().replace(/[’']/g,"'").replace(/\s+/g," ").trim().replace(/^(une|un)\s+/,""); }
+
+function buildOrder(){
+  // ordre des questions mélangé dans chaque partie, options mélangées (sauf deux choix)
+  return PARTS.map(P => shuffle(P.qs.map((_,i)=>i)).map(i => ({i, o: P.qs[i].o ? (P.qs[i].o.length>2 ? shuffle(P.qs[i].o) : P.qs[i].o) : null})));
+}
+
+// ---------- Écrans ----------
+const app = document.getElementById("app");
+function render(){
+  save();
+  if(S.screen==="home") return home();
+  if(S.screen==="q") return question();
+  if(S.screen==="partEnd") return partEnd();
+  if(S.screen==="end") return end();
+}
+
+function home(){
+  const started = Object.keys(S.answers).length>0;
+  app.innerHTML = `
+    <h1>Le genre et le nombre du nom</h1>
+    <div class="sub">Test pour vérifier ce que je sais · Cahier A, p. 79 à 82</div>
+    <div class="card">
+      <p><span class="tag tA">Partie A</span> Je connais · 15 questions · 30 points</p>
+      <p><span class="tag tB">Partie B</span> J'applique les règles · 20 questions · 40 points</p>
+      <p><span class="tag tC">Partie C</span> Défi · 10 questions · 30 points</p>
+      <p class="sub">Total : 100 points. Lis bien chaque question. Après chaque réponse, tu vois si c'est juste et pourquoi.</p>
+    </div>
+    <div class="row">
+      ${started ? `<button class="big" onclick="resume()">Continuer</button><button class="big alt" onclick="restart()">Recommencer</button>`
+                : `<button class="big" onclick="start()">Commencer</button>`}
+    </div>`;
+}
+function start(){ S = fresh(); S.order = buildOrder(); S.screen="q"; render(); }
+function restart(){ start(); }
+function resume(){ if(!S.order) S.order = buildOrder(); S.screen = S.retry ? "q" : (S.screen==="home" ? "q" : S.screen); render(); }
+
+function currentList(){
+  // en mode « refaire mes erreurs », la liste est S.retry ; sinon l'ordre de la partie
+  return S.retry ? S.retry : S.order[S.part].map(x=>({p:S.part, i:x.i, o:x.o}));
+}
+
+function question(){
+  const list = currentList();
+  if(S.idx >= list.length){ S.screen = S.retry ? "end" : (S.part<2 ? "partEnd" : "end"); if(S.retry){ S.retry=null; } return render(); }
+  const it = list[S.idx], P = PARTS[it.p], Q = P.qs[it.i], id = qid(it.p,it.i);
+  const ans = S.retry ? S.retryAns && S.retryAns[id] : S.answers[id];
+  const total = list.length;
+  const head = S.retry ? `<span class="tag" style="background:#555">Je refais mes erreurs</span>`
+                       : `<span class="tag ${P.cls}">${P.name}</span> <span class="sub">${P.title}</span>`;
+  let body = "";
+  if(Q.t==="type"){
+    body = `<input class="typ ${ans?(ans.ok?'good':'bad'):''}" id="inp" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+              placeholder="écris ici" ${ans?'disabled':''} value="${ans?esc(ans.v):''}">
+            ${ans?'':`<div class="row" style="margin-top:12px"><button class="big" onclick="submitType()">Valider</button></div>`}`;
+  } else {
+    const opts = it.o || Q.o;
+    body = `<div class="opts ${opts.length===2?'two':''}">` + opts.map(o=>{
+      let c = "";
+      if(ans){ if(o===Q.a) c="good"; else if(o===ans.v) c="bad"; else c="dim"; }
+      return `<button class="opt ${c}" ${ans?'disabled':''} onclick='pick(${JSON.stringify(o)})'>${o}</button>`;
+    }).join("") + `</div>`;
+  }
+  const right = Q.t==="type" ? Q.a[0] : Q.a;
+  const fb = ans ? `<div class="fb ${ans.ok?'ok':'no'}"><b>${ans.ok?'Bravo, c\'est juste !':'Pas tout à fait…'}</b>
+      ${ans.ok?'':`La bonne réponse : <b style="display:inline">${right}</b><br>`}${Q.e}</div>
+      <div class="next"><button class="big" onclick="nextQ()">Suivant →</button></div>` : "";
+  app.innerHTML = `
+    <div class="row" style="justify-content:space-between">${head}<span class="sub">${S.idx+1} / ${total}</span></div>
+    <div class="bar"><i style="width:${(S.idx/total)*100}%"></i></div>
+    <div class="card">
+      <div class="q">${Q.p}</div>
+      ${Q.w?`<div class="q" style="font-weight:600;color:${P.color}">${Q.w}</div>`:""}
+      ${body}
+      ${fb}
+    </div>`;
+  const inp = document.getElementById("inp");
+  if(inp && !ans){ inp.addEventListener("keydown", e=>{ if(e.key==="Enter") submitType(); }); }
+}
+function esc(s){ return String(s).replace(/[&<>"]/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
+
+function record(v, ok){
+  const it = currentList()[S.idx], id = qid(it.p,it.i);
+  if(S.retry){ S.retryAns = S.retryAns||{}; S.retryAns[id] = {v, ok}; if(ok) S.answers[id] = Object.assign({}, S.answers[id], {fixed:true}); }
+  else S.answers[id] = {v, ok};
+  render();
+}
+function pick(o){
+  const it = currentList()[S.idx], Q = PARTS[it.p].qs[it.i];
+  record(o, o===Q.a);
+}
+function submitType(){
+  const inp = document.getElementById("inp"); const v = inp.value;
+  if(!v.trim()){ inp.focus(); return; }
+  const it = currentList()[S.idx], Q = PARTS[it.p].qs[it.i];
+  record(v.trim(), Q.a.some(a => norm(a)===norm(v)));
+}
+function nextQ(){ S.idx++; render(); window.scrollTo(0,0); }
+
+function partScore(p){
+  const P = PARTS[p]; let good=0;
+  P.qs.forEach((_,i)=>{ const a=S.answers[qid(p,i)]; if(a&&a.ok) good++; });
+  return {good, n:P.qs.length, pts: good*P.pts, max: P.qs.length*P.pts};
+}
+
+function partEnd(){
+  const P = PARTS[S.part], s = partScore(S.part), N = PARTS[S.part+1];
+  app.innerHTML = `
+    <div class="card" style="text-align:center">
+      <span class="tag ${P.cls}">${P.name} terminée</span>
+      <div class="score" style="color:${P.color}">${s.pts} / ${s.max}</div>
+      <div class="sub">${s.good} bonnes réponses sur ${s.n}</div>
+    </div>
+    <div class="row" style="justify-content:center">
+      <button class="big ${N.id==='B'?'orange':'violet'}" onclick="goNext()">${N.name} : ${N.title} →</button>
+    </div>`;
+}
+function goNext(){ S.part++; S.idx=0; S.screen="q"; render(); window.scrollTo(0,0); }
+
+function end(){
+  const sc = [0,1,2].map(partScore);
+  const tot = sc.reduce((a,s)=>a+s.pts,0);
+  const stars = tot>=95?"⭐⭐⭐":tot>=80?"⭐⭐":tot>=60?"⭐":"";
+  const msg = tot===100?"Parfait ! Tu es prête pour le test.":tot>=80?"Très bien ! Revois tes erreurs et refais-les.":tot>=60?"Bon début. Relis l'aide-mémoire et refais tes erreurs.":"Relis les règles avec un adulte, puis recommence.";
+  const errs = [];
+  PARTS.forEach((P,p)=>P.qs.forEach((Q,i)=>{ const a=S.answers[qid(p,i)]; if(a&&!a.ok) errs.push({p,i,P,Q,a}); }));
+  const pending = errs.filter(x=>!x.a.fixed);
+  app.innerHTML = `
+    <h1>Résultat</h1>
+    <div class="card">
+      <div class="score">${tot} / 100</div>
+      <div class="stars">${stars}</div>
+      <p style="text-align:center">${msg}</p>
+      <table>
+        ${sc.map((s,p)=>`<tr><td><span class="tag ${PARTS[p].cls}">${PARTS[p].name}</span> ${PARTS[p].title}</td><td style="text-align:right"><b>${s.pts}</b> / ${s.max}</td></tr>`).join("")}
+      </table>
+    </div>
+    ${errs.length?`<div class="card"><h2>Mes erreurs</h2>
+      ${errs.map(x=>`<div class="err">${x.Q.w?x.Q.w:x.Q.p.replace(/<[^>]+>/g,"")} — ta réponse : <span class="you">${esc(x.a.v)}</span> · bonne réponse : <span class="ans">${x.Q.t==='type'?x.Q.a[0]:x.Q.a}</span>${x.a.fixed?' ✅':''}</div>`).join("")}
+      ${pending.length?`<div class="row" style="margin-top:14px"><button class="big orange" onclick="retryErrors()">Refaire mes erreurs (${pending.length})</button></div>`:`<p>Tu as corrigé toutes tes erreurs. Bravo !</p>`}
+    </div>`:""}
+    <div class="card rules"><h2>Aide-mémoire</h2>${RULES}</div>
+    <div class="row"><button class="big alt" onclick="restart()">Recommencer tout le test</button></div>`;
+}
+function retryErrors(){
+  const list=[];
+  PARTS.forEach((P,p)=>P.qs.forEach((Q,i)=>{ const a=S.answers[qid(p,i)]; if(a&&!a.ok&&!a.fixed) list.push({p,i,o:Q.o?(Q.o.length>2?shuffle(Q.o):Q.o):null}); }));
+  S.retry = shuffle(list); S.retryAns = {}; S.idx=0; S.screen="q"; render(); window.scrollTo(0,0);
+}
+
+render();
+if("serviceWorker" in navigator){ navigator.serviceWorker.register("sw.js").catch(()=>{}); }
+</script>
+</body>
+</html>
